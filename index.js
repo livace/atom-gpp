@@ -7,6 +7,8 @@ const os = require("os");
 const CompositeDisposable = require("atom").CompositeDisposable;
 const Point = require("atom").Point;
 
+
+
 module.exports = {
     activate() {
         this.subscriptions = new CompositeDisposable();
@@ -106,12 +108,12 @@ function compile(runAfter){
     const options = atom.config.get("gpp.compilerOptions");
 
     const args = [
-        fileName + fileExt,
+        file.path,
         "-o",
         path.join(filePath.dir, filePath.name),
         options.split(' ')
     ];
-
+    
     const child = child_process.spawn("g++", args, {cwd: filePath.dir});
 
     let stderr = "";
