@@ -10,8 +10,8 @@
       "run",
       "mingw"
   ],
-  "repository": "https://github.com/atom/atom-gpp",
-  "homepage": "https://github.com/atom/atom-gpp#readme",
+  "repository": "https://github.com/livace/atom-gpp",
+  "homepage": "https://github.com/livace/atom-gpp#readme",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
