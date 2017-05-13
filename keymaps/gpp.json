@@ -1,0 +1,11 @@
+{
+    "atom-text-editor": {
+        "ctrl-f9": "gpp:compile",
+        "f9": "gpp:compile-run",
+        "f10": "gpp:run"
+    },
+    ".editor": {
+        "ctrl-right": "gpp:nextErr",
+        "ctrl-left": "gpp:prevErr"
+    }
+}
