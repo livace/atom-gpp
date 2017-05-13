@@ -106,9 +106,7 @@ function compile(runAfter){
         return 0;
     }
 
-    const options = (file.path + " -o " + compiledPath + atom.config.get("gpp.compilerOptions")).replace(/[\s{2,}]+/g, ' ').trim();
-
-    console.log("Args: " + options);
+    const options = (file.path + " -o " + compiledPath + " " + atom.config.get("gpp.compilerOptions")).replace(/[\s{2,}]+/g, ' ').trim();
 
     path.join(filePath.dir, filePath.name)
 
