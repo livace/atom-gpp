@@ -1,14 +1,14 @@
 {
   "name": "gpp",
   "main": "./index.js",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Compile and run c++ easy",
   "keywords": [
-      "c++",
-      "g++",
-      "compile",
-      "run",
-      "mingw"
+    "c++",
+    "g++",
+    "compile",
+    "run",
+    "mingw"
   ],
   "repository": "https://github.com/livace/atom-gpp",
   "homepage": "https://github.com/livace/atom-gpp#readme",
@@ -16,6 +16,5 @@
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
