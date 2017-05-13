@@ -99,22 +99,21 @@ function compile(runAfter){
     const filePath = path.parse(file.path);
     const fileName = filePath.name;
     const fileExt = filePath.ext;
+    const compiledPath = path.join(filePath.dir, filePath.name);
 
     if(fileExt != '.cpp'){
         atom.notifications.addError("Wrong extention " + fileExt + "<br> Only .cpp is allowed");
         return 0;
     }
 
-    const options = atom.config.get("gpp.compilerOptions");
+    const options = (file.path + " -o " + compiledPath + atom.config.get("gpp.compilerOptions")).replace(/[\s{2,}]+/g, ' ').trim();
 
-    const args = [
-        file.path,
-        "-o",
-        path.join(filePath.dir, filePath.name),
-        options.split(' ')
-    ];
-    
-    const child = child_process.spawn("g++", args, {cwd: filePath.dir});
+    console.log("Args: " + options);
+
+    path.join(filePath.dir, filePath.name)
+
+
+    const child = child_process.spawn("g++", options.split(' '), {cwd: filePath.dir});
 
     let stderr = "";
 
