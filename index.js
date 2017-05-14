@@ -6,8 +6,11 @@ const path = require("path");
 const os = require("os");
 const CompositeDisposable = require("atom").CompositeDisposable;
 const Point = require("atom").Point;
+const Range = require("atom").Range;
 
-
+let errs = [];
+let curErr = 0;
+let markers = [];
 
 module.exports = {
     activate() {
@@ -54,14 +57,23 @@ module.exports = {
             default: true,
             title: "Show warnings",
             type: "boolean"
+        },
+        higlightErrors: {
+            default: true,
+            title: "Higlight errors",
+            description: "Higlights lines with errors",
+            type: "boolean"
         }
     },
     deactivate() {
         this.subscriptions.dispose();
+        for(let i = 0; i < markers.length; i++){
+            markers[i].destroy();
+        }
+        markers = [];
     },
     subscriptions: null
 }
-
 if(process.platform === "linux"){
     module.exports.config.linuxTerminal = {
         default: "GNOME Terminal",
@@ -79,8 +91,6 @@ if(process.platform === "linux"){
     };
 }
 
-let errs = [];
-let curErr = 0;
 
 function compile(runAfter){
     const editor = atom.workspace.getActiveTextEditor();
@@ -110,7 +120,6 @@ function compile(runAfter){
 
     path.join(filePath.dir, filePath.name)
 
-
     const child = child_process.spawn("g++", options.split(' '), {cwd: filePath.dir});
 
     let stderr = "";
@@ -120,7 +129,21 @@ function compile(runAfter){
     });
 
     child.on("close", (code) => {
-        errs = stderr.split('\n');
+
+        if(stderr) parseErr(stderr);
+
+        for(let i = 0; i < markers.length; i++){
+            markers[i].destroy();
+        }
+        markers = [];
+        if(atom.config.get("gpp.higlightErrors")){
+            for(let i = 0; i < errs.length; i++){
+                const range = Range(new Point(errs[i].row, 0), new Point(errs[i].row+1, 0));
+                const marker = editor.markBufferRange(range);
+                markers.push(editor.decorateMarker(marker, {type: 'line', class: 'gpp'+errs[i].type}));
+            }
+        }
+
         if(atom.config.get("gpp.addCompilingErr")){
             fs.writeFile(path.join(filePath.dir, "compiling_error.txt"), stderr ? stderr : "");
         }
@@ -227,50 +250,77 @@ function run(){
 
 function nextErr(){
     curErr++;
-
-    for(var i = 0; i < errs.length; curErr++, i++){
-        if(curErr >= errs.length) curErr = 0;
-        if(parseErr()){
-          break;
-        }
-    }
+    if(curErr >= errs.length) curErr = 0;
+    const position = new Point(errs[curErr].row, errs[curErr].column);
+    setCursorPosition(position);
 }
 
 function prevErr(){
     curErr--;
+    if(curErr < 0) curErr = errs.length - 1;
+    const position = new Point(errs[curErr].row, errs[curErr].column);
+    setCursorPosition(position);
+}
 
-    for(var i = 0; i < errs.length; curErr--, i++){
-        if(curErr < 0) curErr = errs.length - 1;
+function parseErr(stderr){
+    errs = [];
+    if(!stderr){
+        return;
+    }
+    let tmpErrs = stderr.split('\n');
+    let buf = [];
+    for(let curErr = 0; curErr < tmpErrs.length; curErr++){
+        let res = tmpErrs[curErr].split(':');
 
-        if(parseErr()){
-          break;
+        let path = "";
+        let i = 0;
+
+        while(i < res.length && isNaN(res[i])){
+            if(i > 0) path+=":";
+            path+=res[i];
+            i++;
+        }
+        if(i >= res.length-2){
+            continue;
+        }
+        if(isNaN(res[i+1])){
+            continue;
+        }
+        let row = Number(res[i]) - 1;
+        let column = Number(res[i+1]) - 1;
+        let type = res[i+2].trim();
+
+        if(type !== "error" && type !== "warning"){
+            type = "note";
+        }
+
+        buf.push({
+            'row': row,
+            'column': column,
+            'type': type
+        });
+    }
+    if(atom.config.get("gpp.showWarning")){
+        errs = buf;
+        return;
+    }
+    let curErr = 0;
+    while(curErr < buf.length){
+        if(buf[curErr].type === "warning"){
+            while(curErr < buf.length && buf[curErr]!== "error") curErr++;
+        }
+        else{
+            errs.push(buf[curErr]);
+            curErr++;
         }
     }
 }
 
-function parseErr(){
-    var res = errs[curErr].split(':');
-
-    var path = "";
-    var i = 0;
-
-    while(i < res.length && isNaN(res[i])){
-        if(i > 0) path+=":";
-        path+=res[i];
-        i++;
+function setCursorPosition(position){
+    const editor = atom.workspace.getActiveTextEditor();
+    if(!editor){
+        atom.notifications.addFatalError("Editor not found");
+        return;
     }
-    if(i >= res.length-1){
-        return 0;
-    }
-    if(isNaN(res[i+1])){
-        return 0;
-    }
-    var row = Number(res[i]) - 1;
-    var column = Number(res[i+1]) - 1;
-    const position = new Point(row, column);
-
-    const editor = atom.workspace.getActivePaneItem();
     editor.setCursorBufferPosition(position);
-
-    return 1;
 }
