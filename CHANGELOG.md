@@ -1,3 +1,6 @@
+## 0.2.1
+    Fixed highlight bug and warnings bug
+
 ## 0.2.0
     Added errors highlights
 

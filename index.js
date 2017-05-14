@@ -130,7 +130,7 @@ function compile(runAfter){
 
     child.on("close", (code) => {
 
-        if(stderr) parseErr(stderr);
+        parseErr(stderr);
 
         for(let i = 0; i < markers.length; i++){
             markers[i].destroy();
@@ -159,7 +159,7 @@ function compile(runAfter){
         else{
             atom.notifications.addSuccess("Compilation Successful");
 
-            if(stderr && atom.config.get("gpp:showWarning"))
+            if(stderr && atom.config.get("gpp.showWarning"))
                 atom.notifications.addWarning(stderr.replace(/\n/g, "<br />"));
 
             if(runAfter) run();
