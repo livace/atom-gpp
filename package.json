@@ -1,7 +1,7 @@
 {
   "name": "gpp",
   "main": "./index.js",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Compile and run c++ easy",
   "keywords": [
     "c++",
