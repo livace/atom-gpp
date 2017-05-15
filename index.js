@@ -49,7 +49,7 @@ let compiler = {
 
     child.on('close', (code) => {
       errorParser.parse(stderr);
-      errorParser.panel.update();
+      if (atom.config.get('gpp.showCompilationPanel')) errorParser.panel.update();
 
       if (atom.config.get('gpp.addCompilingErr')) {
         fs.writeFile(path.join(filePath.dir, 'compiling_error.txt'), stderr);
@@ -164,7 +164,7 @@ let errorParser = {
   },
 
   gotoErr: function (err) {
-    if(err < 0 || err > this.errs.length) err = 0;
+    if (err < 0 || err > this.errs.length) err = 0;
 
     this.curErr = err;
     const curPoint = this.errs[this.curErr];
@@ -290,8 +290,7 @@ let errorParser = {
 
     update: function () {
       let panel = document.createElement('div');
-      console.log(this.curHeight);
-      if(!this.curHeight) this.curHeight = '150px'
+      if (!this.curHeight) this.curHeight = '150px'
       panel.style.height = this.curHeight;
       panel.setAttribute('class', 'gppbottompanel');
 
@@ -300,14 +299,14 @@ let errorParser = {
 
       let content = document.createElement('div');
       content.style.width = '100%';
-      content.style.height = '100%';
+      content.style.height = '120px';
       content.setAttribute('class', 'gppbottompanelcontent');
 
       for (let i = 0; i < errorParser.errs.length; i++) {
         this.err[i] = document.createElement('p');
         this.err[i].innerHTML = errorParser.errs[i].text;
         this.err[i].setAttribute('class', 'gpp' + errorParser.errs[i].type);
-        this.err[i].addEventListener('click', function (){
+        this.err[i].addEventListener('click', function () {
           errorParser.gotoErr(i);
         });
         content.appendChild(this.err[i]);
@@ -350,7 +349,7 @@ let errorParser = {
     },
 
     mark: function (curErr) {
-      if (this.active !== undefined){
+      if (this.active !== undefined) {
         this.err[this.active].classList.remove('active');
       }
       this.active = curErr;
@@ -435,6 +434,22 @@ module.exports = {
   },
   subscriptions: null
 };
+
+// if (atom.config.get('gpp.showCompilationPanel')) {
+//   module.exports.config.panelPosition = {
+//     default: 'Bottom',
+//     enum: [
+//       'Bottom',
+//       'Left',
+//       'Right',
+//       'Top'
+//     ],
+//     title: 'Panel Position',
+//     type: 'string'
+//   };
+// }
+// Will be in next version
+
 if (process.platform === 'linux') {
   module.exports.config.linuxTerminal = {
     default: 'GNOME Terminal',
