@@ -8,6 +8,8 @@ To compile file use <kbd>ctrl-F9</kbd>
 
 To run file use <kbd>F10</kbd>
 
+To toggle compilation panel use <kbd>ctrl-shift-T</kbd>
+
 To go to next/previous error use <kbd>ctrl-right</kbd> / <kbd>ctrl-left</kbd>
 
 # Dependencies

@@ -5,7 +5,7 @@ const path = require('path');
 const CompositeDisposable = require('atom').CompositeDisposable;
 const Point = require('atom').Point;
 const Range = require('atom').Range;
-
+// import {ResizeablePanel} from './lib/resizable-panel';
 let editor = '';
 
 let compiler = {
@@ -49,11 +49,13 @@ let compiler = {
 
     child.on('close', (code) => {
       errorParser.parse(stderr);
-      errorParser.mark();
-      // errorParser.panel.update();
+      errorParser.panel.update();
 
       if (atom.config.get('gpp.addCompilingErr')) {
         fs.writeFile(path.join(filePath.dir, 'compiling_error.txt'), stderr);
+      }
+      if (atom.config.get('gpp.highlightErrors')) {
+        errorParser.highlight();
       }
       if (code) {
         atom.notifications.addError(stderr.replace(/\n/g, '<br />'));
@@ -87,6 +89,7 @@ let compiler = {
     const options = {
       cwd: filePath.dir
     };
+
     const compiledPath = path.join(filePath.dir, filePath.name);
     if (process.platform === 'linux') {
       const terminal = atom.config.get('gpp.linuxTerminal');
@@ -145,35 +148,46 @@ let errorParser = {
   errs: [],
   curErr: 0,
   markers: [],
+
   next: function () {
-    errorParser.curErr++;
-    if (errorParser.curErr >= errorParser.errs.length) errorParser.curErr = 0;
-    errorParser.gotoErr(errorParser.curErr);
+    this.curErr++;
+    if (this.curErr >= this.errs.length) this.curErr = 0;
+    this.gotoErr(this.curErr);
   },
 
   prev: function () {
-    errorParser.curErr--;
-    if (errorParser.curErr < 0) {
-      errorParser.curErr = errorParser.errs.length - 1;
+    this.curErr--;
+    if (this.curErr < 0) {
+      this.curErr = this.errs.length - 1;
     }
-    errorParser.gotoErr(errorParser.curErr);
+    this.gotoErr(this.curErr);
   },
 
   gotoErr: function (err) {
-    errorParser.curErr = err;
-    const curPoint = errorParser.errs[errorParser.curErr];
+    if(err < 0 || err > this.errs.length) err = 0;
+
+    this.curErr = err;
+    const curPoint = this.errs[this.curErr];
+    if (!curPoint) return;
+
     const position = new Point(curPoint.row, curPoint.column);
-    errorParser.setCursorPosition(position);
+    this.setCursorPosition(position);
+
+    if (atom.config.get('gpp.showCompilationPanel')) this.panel.mark(this.curErr);
   },
 
   parse: function (stderr) {
-    errorParser.errs = [];
+    this.curErr = -1;
+    this.errs = [];
     if (!editor) return;
+
     if (!stderr) {
       return;
     }
+
     let tmpErrs = stderr.split('\n');
     let buf = [];
+
     for (let curErr = 0; curErr < tmpErrs.length; curErr++) {
       let res = tmpErrs[curErr].split(':');
 
@@ -214,19 +228,25 @@ let errorParser = {
         'text': ''
       });
     }
-    for (let i = 0; i < buf.lenght; i++){
-      for (let j = buf[i].id; j < )
+
+    for (let i = 0; i < buf.length; i++) {
+      for (let j = buf[i].id; j < tmpErrs.length && (i + 1 === buf.length || j < buf[i + 1].id); j++) {
+        if (buf[i].text !== '') buf[i].text += '<br />';
+        buf[i].text += tmpErrs[j];
+      }
     }
+
     if (atom.config.get('gpp.showWarning')) {
-      errorParser.errs = buf;
+      this.errs = buf;
       return;
     }
+
     let curErr = 0;
     while (curErr < buf.length) {
       if (buf[curErr].type === 'warning') {
         while (curErr < buf.length && buf[curErr] !== 'error') curErr++;
       } else {
-        errorParser.errs.push(buf[curErr]);
+        this.errs.push(buf[curErr]);
         curErr++;
       }
     }
@@ -239,32 +259,107 @@ let errorParser = {
     editor.setCursorBufferPosition(position);
   },
 
-  mark: function () {
-    for (let i = 0; i < errorParser.markers.length; i++) {
-      errorParser.markers[i].destroy();
+  highlight: function () {
+    for (let i = 0; i < this.markers.length; i++) {
+      this.markers[i].destroy();
     }
-    errorParser.markers = [];
-    if (atom.config.get('gpp.higlightErrors')) {
-      for (let i = 0; i < errorParser.errs.length; i++) {
-        const range = Range(new Point(errorParser.errs[i].row, 0), new Point(errorParser.errs[i].row + 1, 0));
+    this.markers = [];
+    if (atom.config.get('gpp.highlightErrors')) {
+      for (let i = 0; i < this.errs.length; i++) {
+        const range = Range(new Point(this.errs[i].row, 0), new Point(this.errs[i].row + 1, 0));
         const marker = editor.markBufferRange(range);
-        errorParser.markers.push(editor.decorateMarker(marker, {
+
+        this.markers.push(editor.decorateMarker(marker, {
           type: 'line',
-          class: 'gpp' + errorParser.errs[i].type
+          class: 'gppeditor' + this.errs[i].type
         }));
       }
     }
   },
 
   panel: {
-    create: function (stderr) {
-      let panel = document.createElement('div');
+    err: [],
+    activePanel: undefined,
+    resizer: undefined,
+    active: undefined,
 
+    toggle: function () {
+      if (!this.activePanel) this.update();
+      if (this.activePanel.isVisible()) this.activePanel.hide();
+      else this.activePanel.show();
+    },
+
+    update: function () {
+      let panel = document.createElement('div');
+      panel.style.height = '150px';
+      panel.setAttribute('class', 'gppbottompanel');
+
+      this.err = [];
+      this.active = undefined;
+
+      let content = document.createElement('div');
+      content.style.width = '100%';
+      content.style.height = '100%';
+      content.setAttribute('class', 'gppbottompanelcontent');
+
+      for (let i = 0; i < errorParser.errs.length; i++) {
+        this.err[i] = document.createElement('p');
+        this.err[i].innerHTML = errorParser.errs[i].text;
+        this.err[i].setAttribute('class', 'gpp' + errorParser.errs[i].type);
+        this.err[i].addEventListener('click', function (){
+          errorParser.gotoErr(i);
+        });
+        content.appendChild(this.err[i]);
+      }
+
+      if (this.resizer === undefined) {
+        this.resizer = document.createElement('div');
+        this.resizer.style.width = '100%';
+        this.resizer.style.height = '3px';
+        this.resizer.style.cursor = 'ns-resize';
+
+        let firstY, firstHeight;
+        this.resizer.addEventListener('mousedown', mouseDownEvent);
+
+        function mouseDownEvent (event) {
+          firstY = event.clientY;
+          firstHeight = Number(panel.style.height.replace('px', ''));
+          document.body.addEventListener('mousemove', moveTo);
+          document.body.addEventListener('mouseup', mouseUpEvent);
+        }
+
+        function mouseUpEvent (event) {
+          document.body.removeEventListener('mousemove', moveTo);
+          document.body.removeEventListener('mouseup', mouseUpEvent);
+        }
+
+        function moveTo (event) {
+          let newHeight = firstHeight + firstY - event.clientY;
+          panel.style.height = String(newHeight) + 'px';
+          content.style.height = String(newHeight - 3) + 'px';
+        }
+      }
+
+      panel.appendChild(this.resizer);
+      panel.appendChild(content);
+
+      if (this.activePanel) this.activePanel.destroy();
       this.activePanel = atom.workspace.addBottomPanel({
         item: panel
       });
-    }
+    },
 
+    mark: function (curErr) {
+      if (this.active !== undefined){
+        this.err[this.active].classList.remove('active');
+      }
+      this.active = curErr;
+
+      let nodeTop = this.err[curErr].offsetTop - this.activePanel.getItem().childNodes[1].offsetTop;
+      this.activePanel.getItem().childNodes[1].scrollTop = nodeTop;
+
+      this.err[curErr].classList.add('active');
+    }
   }
 
 };
@@ -288,6 +383,9 @@ module.exports = {
       },
       'gpp:prevErr': () => {
         errorParser.prev();
+      },
+      'gpp:togglePanel': () => {
+        errorParser.panel.toggle();
       }
     }));
   },
@@ -315,10 +413,16 @@ module.exports = {
       title: 'Show warnings',
       type: 'boolean'
     },
-    higlightErrors: {
+    highlightErrors: {
       default: true,
-      title: 'Higlight errors',
-      description: 'Higlights lines with errors',
+      title: 'Highlight errors',
+      description: 'Highlights lines with errors',
+      type: 'boolean'
+    },
+    showCompilationPanel: {
+      default: true,
+      title: 'Show compilation panel',
+      description: 'Show panel with compilation results',
       type: 'boolean'
     }
   },

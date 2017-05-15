@@ -2,7 +2,8 @@
     "atom-text-editor": {
         "ctrl-f9": "gpp:compile",
         "f9": "gpp:compile-run",
-        "f10": "gpp:run"
+        "f10": "gpp:run",
+        "ctrl-shift-t": "gpp:togglePanel"
     },
     ".editor": {
         "ctrl-right": "gpp:nextErr",
