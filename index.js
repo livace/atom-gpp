@@ -280,7 +280,6 @@ let errorParser = {
   panel: {
     err: [],
     activePanel: undefined,
-    resizer: undefined,
     active: undefined,
 
     toggle: function () {
@@ -291,7 +290,9 @@ let errorParser = {
 
     update: function () {
       let panel = document.createElement('div');
-      panel.style.height = '150px';
+      console.log(this.curHeight);
+      if(!this.curHeight) this.curHeight = '150px'
+      panel.style.height = this.curHeight;
       panel.setAttribute('class', 'gppbottompanel');
 
       this.err = [];
@@ -312,35 +313,34 @@ let errorParser = {
         content.appendChild(this.err[i]);
       }
 
-      if (this.resizer === undefined) {
-        this.resizer = document.createElement('div');
-        this.resizer.style.width = '100%';
-        this.resizer.style.height = '3px';
-        this.resizer.style.cursor = 'ns-resize';
+      let resizer = document.createElement('div');
+      resizer.style.width = '100%';
+      resizer.style.height = '30px';
+      resizer.style.cursor = 'ns-resize';
 
-        let firstY, firstHeight;
-        this.resizer.addEventListener('mousedown', mouseDownEvent);
+      let firstY, firstHeight;
+      resizer.addEventListener('mousedown', mouseDownEvent);
 
-        function mouseDownEvent (event) {
-          firstY = event.clientY;
-          firstHeight = Number(panel.style.height.replace('px', ''));
-          document.body.addEventListener('mousemove', moveTo);
-          document.body.addEventListener('mouseup', mouseUpEvent);
-        }
-
-        function mouseUpEvent (event) {
-          document.body.removeEventListener('mousemove', moveTo);
-          document.body.removeEventListener('mouseup', mouseUpEvent);
-        }
-
-        function moveTo (event) {
-          let newHeight = firstHeight + firstY - event.clientY;
-          panel.style.height = String(newHeight) + 'px';
-          content.style.height = String(newHeight - 3) + 'px';
-        }
+      function mouseDownEvent (event) {
+        firstY = event.clientY;
+        firstHeight = Number(panel.style.height.replace('px', ''));
+        document.body.addEventListener('mousemove', moveTo);
+        document.body.addEventListener('mouseup', mouseUpEvent);
       }
 
-      panel.appendChild(this.resizer);
+      function mouseUpEvent (event) {
+        document.body.removeEventListener('mousemove', moveTo);
+        document.body.removeEventListener('mouseup', mouseUpEvent);
+      }
+
+      function moveTo (event) {
+        let newHeight = firstHeight + firstY - event.clientY;
+        errorParser.panel.curHeight = String(newHeight) + 'px';
+        panel.style.height = errorParser.panel.curHeight;
+        content.style.height = String(newHeight - 30) + 'px';
+      }
+
+      panel.appendChild(resizer);
       panel.appendChild(content);
 
       if (this.activePanel) this.activePanel.destroy();
