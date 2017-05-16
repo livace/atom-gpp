@@ -136,7 +136,7 @@ let compiler = {
       ], options);
     }
     if (process.platform === 'win32') {
-      const command = `start '${filePath.name}' cmd /C ${compiledPath} & echo.`;
+      const command = `start "${filePath.name}" cmd /C ${compiledPath} & echo.`;
       child_process.exec(command, options);
     } else if (process.platform === 'darwin') {
       child_process.spawn('open', [compiledPath], options);
