@@ -13,14 +13,14 @@ let compiler = {
   compile: function (runAfter) {
     editor = atom.workspace.getActiveTextEditor();
     if (!editor) {
-      atom.notifications.addFatalError('Editor not found');
+      if (atom.config.get('gpp.showNotifications')) atom.notifications.addFatalError('Editor not found');
       return;
     }
     editor.save();
 
     const file = editor.buffer.file;
     if (!file) {
-      atom.notifications.addError('File not found. Save before compiling');
+      if (atom.config.get('gpp.showNotifications')) atom.notifications.addError('File not found. Save before compiling');
       return;
     }
 
@@ -58,15 +58,15 @@ let compiler = {
         errorParser.highlight();
       }
       if (code) {
-        atom.notifications.addError(stderr.replace(/\n/g, '<br />'));
+        if (atom.config.get('gpp.showNotifications')) atom.notifications.addError(stderr.replace(/\n/g, '<br />'));
 
         if (atom.config.get('gpp.gotoErr')) {
           errorParser.next();
         }
       } else {
-        atom.notifications.addSuccess('Compilation Successful');
+        if (atom.config.get('gpp.showNotifications')) atom.notifications.addSuccess('Compilation Successful');
 
-        if (stderr && atom.config.get('gpp.showWarning')) {
+        if (atom.config.get('gpp.showNotifications') && stderr && atom.config.get('gpp.showWarning')) {
           atom.notifications.addWarning(stderr.replace(/\n/g, '<br />'));
         }
         if (runAfter) compiler.run();
@@ -290,17 +290,17 @@ let errorParser = {
 
     update: function () {
       let panel = document.createElement('div');
-      if (!this.curHeight) this.curHeight = '150px'
-      panel.style.height = this.curHeight;
-      panel.setAttribute('class', 'gppbottompanel');
 
+      let position = atom.config.get('gpp.panelPosition');
+      let vertical = position === 'Left' || position === 'Right';
+
+      panel.setAttribute('class', 'gpppanel ' + position);
       this.err = [];
-      this.active = undefined;
+      this.activeElement = undefined;
 
       let content = document.createElement('div');
-      content.style.width = '100%';
-      content.style.height = '120px';
-      content.setAttribute('class', 'gppbottompanelcontent');
+      content.setAttribute('class', 'gpppanel');
+      content.setAttribute('class', 'content');
 
       for (let i = 0; i < errorParser.errs.length; i++) {
         this.err[i] = document.createElement('p');
@@ -312,17 +312,35 @@ let errorParser = {
         content.appendChild(this.err[i]);
       }
 
-      let resizer = document.createElement('div');
-      resizer.style.width = '100%';
-      resizer.style.height = '30px';
-      resizer.style.cursor = 'ns-resize';
+      if (!vertical && !this.curHeight) {
+        this.curHeight = '150px';
+      }
+      if (vertical && !this.curWidth) {
+        this.curWidth = '300px';
+      }
+      if (vertical) {
+        panel.style.width = this.curWidth;
+        content.style.width = '270px';
+        content.style.height = '100%';
+      } else {
+        panel.style.height = this.curHeight;
+        content.style.height = '120px';
+        content.style.width = '100%';
+      }
 
-      let firstY, firstHeight;
-      resizer.addEventListener('mousedown', mouseDownEvent);
+      panel.addEventListener('mousedown', mouseDownEvent);
+
+      let firstY, firstX, firstWidth, firstHeight;
 
       function mouseDownEvent (event) {
-        firstY = event.clientY;
-        firstHeight = Number(panel.style.height.replace('px', ''));
+        if (vertical) {
+          firstX = event.clientX;
+          firstWidth = Number(panel.style.width.replace('px', ''));
+        } else {
+          firstY = event.clientY;
+          firstHeight = Number(panel.style.height.replace('px', ''));
+        }
+
         document.body.addEventListener('mousemove', moveTo);
         document.body.addEventListener('mouseup', mouseUpEvent);
       }
@@ -333,29 +351,55 @@ let errorParser = {
       }
 
       function moveTo (event) {
-        let newHeight = firstHeight + firstY - event.clientY;
-        errorParser.panel.curHeight = String(newHeight) + 'px';
-        panel.style.height = errorParser.panel.curHeight;
-        content.style.height = String(newHeight - 30) + 'px';
+        if (vertical) {
+          let newWidth;
+          if (position === 'Right') newWidth = firstWidth + firstX - event.clientX;
+          else newWidth = firstWidth - firstX + event.clientX;
+          errorParser.panel.curWidth = String(newWidth) + 'px';
+          panel.style.width = errorParser.panel.curWidth;
+          content.style.width = String(newWidth - 30) + 'px';
+        } else {
+          let newHeight;
+          if (position === 'Bottom') newHeight = firstHeight + firstY - event.clientY;
+          else newHeight = firstHeight - firstY + event.clientY;
+          errorParser.panel.curHeight = String(newHeight) + 'px';
+          console.log('New Height: ' + errorParser.panel.curHeight);
+          panel.style.height = errorParser.panel.curHeight;
+          content.style.height = String(newHeight - 30) + 'px';
+        }
       }
 
-      panel.appendChild(resizer);
       panel.appendChild(content);
 
       if (this.activePanel) this.activePanel.destroy();
-      this.activePanel = atom.workspace.addBottomPanel({
-        item: panel
-      });
+
+      if (position === 'Left') {
+        this.activePanel = atom.workspace.addLeftPanel({
+          item: panel
+        });
+      } else if (position === 'Right') {
+        this.activePanel = atom.workspace.addRightPanel({
+          item: panel
+        });
+      } else if (position === 'Top') {
+        this.activePanel = atom.workspace.addTopPanel({
+          item: panel
+        });
+      } else {
+        this.activePanel = atom.workspace.addBottomPanel({
+          item: panel
+        });
+      }
     },
 
     mark: function (curErr) {
-      if (this.active !== undefined) {
-        this.err[this.active].classList.remove('active');
+      if (this.activeElement !== undefined) {
+        this.err[this.activeElement].classList.remove('active');
       }
-      this.active = curErr;
+      this.activeElement = curErr;
 
-      let nodeTop = this.err[curErr].offsetTop - this.activePanel.getItem().childNodes[1].offsetTop;
-      this.activePanel.getItem().childNodes[1].scrollTop = nodeTop;
+      let nodeTop = this.err[curErr].offsetTop - this.activePanel.getItem().childNodes[0].offsetTop;
+      this.activePanel.getItem().childNodes[0].scrollTop = nodeTop;
 
       this.err[curErr].classList.add('active');
     }
@@ -423,6 +467,12 @@ module.exports = {
       title: 'Show compilation panel',
       description: 'Show panel with compilation results',
       type: 'boolean'
+    },
+    showNotifications: {
+      default: true,
+      title: 'Show notifications',
+      description: 'Show notifications about compilation results',
+      type: 'boolean'
     }
   },
   deactivate () {
@@ -434,21 +484,17 @@ module.exports = {
   },
   subscriptions: null
 };
-
-// if (atom.config.get('gpp.showCompilationPanel')) {
-//   module.exports.config.panelPosition = {
-//     default: 'Bottom',
-//     enum: [
-//       'Bottom',
-//       'Left',
-//       'Right',
-//       'Top'
-//     ],
-//     title: 'Panel Position',
-//     type: 'string'
-//   };
-// }
-// Will be in next version
+module.exports.config.panelPosition = {
+  default: 'Bottom',
+  enum: [
+    'Bottom',
+    'Left',
+    'Right',
+    'Top'
+  ],
+  title: 'Panel Position',
+  type: 'string'
+};
 
 if (process.platform === 'linux') {
   module.exports.config.linuxTerminal = {

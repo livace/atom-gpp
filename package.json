@@ -8,7 +8,9 @@
     "g++",
     "compile",
     "run",
-    "mingw"
+    "mingw",
+    "compiler",
+    "XCode"
   ],
   "repository": "https://github.com/livace/atom-gpp",
   "homepage": "https://github.com/livace/atom-gpp#readme",

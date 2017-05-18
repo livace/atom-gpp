@@ -7,21 +7,41 @@
 .gppeditorerror{
   background: rgba(220,20,60,.2) !important;
 }
-.gppbottompanel{
+.gpppanel{
   white-space: pre;
   min-height: 50px;
 }
-.gppbottompanelcontent{
+.gpppanel .content{
   overflow-y: scroll;
 }
-.gppbottompanelcontent *{
+.gpppanel .content *{
   cursor: pointer;
   margin-top: 5px;
   margin-bottom: 5px;
   padding: 5px;
   border-width: 3px;
 }
-
+.gpppanel.Bottom{
+  cursor: ns-resize;
+}
+.gpppanel.Bottom .content{
+  margin-top: 30px;
+}
+.gpppanel.Top{
+  cursor: ns-resize;
+ }
+.gpppanel.Left{
+  cursor: ew-resize;
+}
+.gpppanel.Right{
+  cursor: ew-resize;
+}
+.gpppanel.Right .content{
+  margin-left: 30px;
+}
+.gpppanel .content{
+    cursor: default;
+}
 .gppnote{
   color: white;
   background: rgb(60,81,121) !important;
