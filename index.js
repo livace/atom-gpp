@@ -1,11 +1,11 @@
 const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
-
+// const os = require('os');
 const CompositeDisposable = require('atom').CompositeDisposable;
 const Point = require('atom').Point;
 const Range = require('atom').Range;
-
+// import {ResizeablePanel} from './lib/resizable-panel';
 let editor = '';
 
 let compiler = {
@@ -278,14 +278,20 @@ let errorParser = {
   },
 
   panel: {
+    hidden: false,
     err: [],
     activePanel: undefined,
     active: undefined,
 
     toggle: function () {
       if (!this.activePanel) this.update();
-      if (this.activePanel.isVisible()) this.activePanel.hide();
-      else this.activePanel.show();
+      if (this.activePanel.isVisible()){
+          this.activePanel.hide();
+          this.hidden = true;
+      } else {
+          this.activePanel.show();
+          this.hidden = false;
+      }
     },
 
     update: function () {
@@ -390,6 +396,8 @@ let errorParser = {
           item: panel
         });
       }
+
+      if(this.hidden) this.activePanel.hide();
     },
 
     mark: function (curErr) {
