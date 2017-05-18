@@ -1,11 +1,11 @@
 const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
-// const os = require('os');
+
 const CompositeDisposable = require('atom').CompositeDisposable;
 const Point = require('atom').Point;
 const Range = require('atom').Range;
-// import {ResizeablePanel} from './lib/resizable-panel';
+
 let editor = '';
 
 let compiler = {
