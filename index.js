@@ -320,11 +320,11 @@ let errorParser = {
       }
       if (vertical) {
         panel.style.width = this.curWidth;
-        content.style.width = '270px';
+        content.style.width = (Number(this.curWidth.replace('px', '')) - 30) + 'px';
         content.style.height = '100%';
       } else {
         panel.style.height = this.curHeight;
-        content.style.height = '120px';
+        content.style.height = (Number(this.curHeight.replace('px', '')) - 30) + 'px';
         content.style.width = '100%';
       }
 
