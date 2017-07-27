@@ -33,7 +33,7 @@ let compiler = {
       return 0;
     }
 
-    const options = (file.path + ' -o ' + compiledPath + ' ' + atom.config.get('gpp.compilerOptions')).replace(/[\s{2,}]+/g, ' ').trim();
+    const options = (file.path + ' -o ' + compiledPath + ' ') + atom.config.get('gpp.compilerOptions').replace(/\s\s+/g, ' ').trim();
 
     path.join(filePath.dir, filePath.name);
 
