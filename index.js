@@ -33,11 +33,13 @@ let compiler = {
       return 0;
     }
 
-    const options = (file.path + ' -o ' + compiledPath + ' ') + atom.config.get('gpp.compilerOptions').replace(/\s\s+/g, ' ').trim();
-
+    const options = atom.config.get('gpp.compilerOptions').replace(/[\s{2,}]+/g, ' ').trim();
     path.join(filePath.dir, filePath.name);
-
-    const child = child_process.spawn('g++', options.split(' '), {
+    let newOptions = [file.path, '-o', compiledPath]
+    if (options != ""){
+      newOptions = newOptions.concat(options.split(' '));
+    }
+    const child = child_process.spawn('g++', newOptions, {
       cwd: filePath.dir
     });
 
