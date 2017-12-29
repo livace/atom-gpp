@@ -138,7 +138,7 @@ let compiler = {
       ], options);
     }
     if (process.platform === 'win32') {
-      const command = `start "${filePath.name}" cmd /C ${compiledPath} & echo.`;
+      const command = `start "${filePath.name}" cmd /C ""${compiledPath}" & echo.` + (atom.config.get('gpp.pause') ? ` & pause "` : `"`);
       child_process.exec(command, options);
     } else if (process.platform === 'darwin') {
       child_process.spawn('open', [compiledPath], options);
@@ -426,7 +426,7 @@ module.exports = {
         compiler.compile(false);
       },
       'gpp:compile-run': () => {
-        compiler.compile(true); // Ideas how to make running if compile success better than run = true/false
+        compiler.compile(true); // Ideas how to make running if compile success better than run = true/false?
       },
       'gpp:run': () => {
         compiler.run();
@@ -505,6 +505,14 @@ module.exports.config.panelPosition = {
   title: 'Panel Position',
   type: 'string'
 };
+
+if (process.platform === 'win32') {
+  module.exports.config.pause = {
+    default: true,
+    title: 'Pause program after running',
+    type: 'boolean'
+  }
+}
 
 if (process.platform === 'linux') {
   module.exports.config.linuxTerminal = {
