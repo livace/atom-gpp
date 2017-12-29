@@ -1,3 +1,6 @@
+## 0.4.3
+    Added pause after running option
+
 ## 0.4.0
     Added compilation panel position setting
 
