@@ -16,14 +16,14 @@ let compiler = {
       if (atom.config.get('gpp.showNotifications')) atom.notifications.addFatalError('Editor not found');
       return;
     }
-    editor.save();
-
+    
     const file = editor.buffer.file;
     if (!file) {
       if (atom.config.get('gpp.showNotifications')) atom.notifications.addError('File not found. Save before compiling');
       return;
     }
 
+    editor.save();  
     const filePath = path.parse(file.path);
     const fileExt = filePath.ext;
     const compiledPath = path.join(filePath.dir, filePath.name);
