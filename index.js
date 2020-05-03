@@ -1,11 +1,10 @@
 const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
-// const os = require('os');
 const CompositeDisposable = require('atom').CompositeDisposable;
 const Point = require('atom').Point;
 const Range = require('atom').Range;
-// import {ResizeablePanel} from './lib/resizable-panel';
+
 let editor = '';
 
 let compiler = {
@@ -16,6 +15,7 @@ let compiler = {
       if (atom.config.get('gpp.showNotifications')) atom.notifications.addFatalError('Editor not found');
       return;
     }
+    editor.save();
     
     const file = editor.buffer.file;
     if (!file) {
@@ -23,7 +23,6 @@ let compiler = {
       return;
     }
 
-    editor.save();  
     const filePath = path.parse(file.path);
     const fileExt = filePath.ext;
     const compiledPath = path.join(filePath.dir, filePath.name);
@@ -54,8 +53,13 @@ let compiler = {
       if (atom.config.get('gpp.showCompilationPanel')) errorParser.panel.update();
 
       if (atom.config.get('gpp.addCompilingErr')) {
-        fs.writeFile(path.join(filePath.dir, 'compiling_error.txt'), stderr);
+        fs.writeFile(path.join(filePath.dir, 'compiling_error.txt'), stderr, (err) => {
+            if (err) {
+                atom.notifications.addError('Failed to save ' + path.join(filePath.dir, 'compiling_error.txt') + ' <br /> ' + err);
+            }
+        });
       }
+
       if (atom.config.get('gpp.highlightErrors')) {
         errorParser.highlight();
       }
