@@ -27,8 +27,8 @@ let compiler = {
     const fileExt = filePath.ext;
     const compiledPath = path.join(filePath.dir, filePath.name);
 
-    if (fileExt !== '.cpp') {
-      atom.notifications.addError('Wrong extention ' + fileExt + '<br> Only .cpp is allowed');
+    if (fileExt !== '.cc' && fileExt !== '.cpp') {
+      atom.notifications.addError('Wrong extension ' + fileExt + '<br> Only .cc or .cpp is allowed');
       return 0;
     }
 
