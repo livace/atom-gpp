@@ -109,7 +109,7 @@ let compiler = {
 
         case 'Konsole':
           terminalCommand = 'konsole';
-          args = ['-e'];
+          args = ['--hold', '-e'];
           break;
 
         case 'xfce4-terminal':
