@@ -16,7 +16,7 @@ let compiler = {
       return;
     }
     editor.save();
-    
+
     const file = editor.buffer.file;
     if (!file) {
       if (atom.config.get('gpp.showNotifications')) atom.notifications.addError('File not found. Save before compiling');
@@ -27,8 +27,8 @@ let compiler = {
     const fileExt = filePath.ext;
     const compiledPath = path.join(filePath.dir, filePath.name);
 
-    if (fileExt !== '.cc' && fileExt !== '.cpp') {
-      atom.notifications.addError('Wrong extension ' + fileExt + '<br> Only .cc or .cpp is allowed');
+    if (fileExt !== '.cc' && fileExt !== '.cpp' && fileExt !== '.C') {
+      atom.notifications.addError('Wrong extension ' + fileExt + '<br> Only .cc, .cpp, and .C file extensions are allowed');
       return 0;
     }
 
